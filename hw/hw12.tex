@@ -185,11 +185,77 @@ def passes_graph(n, free_edges, paid_edges, K, A, B, s, t):
 
     Решение:
 
-  \item
-    Постройте матрицу $n \times n$, состоящую из клеток-стенок и пустых клеток,
-    на которой при запуске \texttt{BFS} из какой-то клетки максимальный
-    размер очереди будет $\omega(n)$. Ходить можно между клетками, смежными по стороне.
+    \begin{itemize}
+      \item Заметим, что чем меньше $L$, тем большее расстояния мы сможем пройти в произвольном графе
+      \item При этом BFS обходит граф также в порядке увеличения пройденного расстояния.
+      \item Это значит, что ответ монотонен по $L$: если можно добраться при скорости $L$, то можно и при любой меньшей скорости $L^* < L$.
+      Это позволяет использовать бинарный поиск по ответу.
 
-    Решение:
+      \item Определим критерий доступности ребра для перехода.
+      Пусть мы находимся в вершине $u$ в момент времени $dist[u]$ и хотим пройти по ребру $(u, v)$ с ёмкостью $C_{u,v}$.
+      \begin{itemize}
+        \item Начинаем движение в момент $dist[u]$, заканчиваем в момент $dist[u] + 1$
+        \item Уровень воды в ребре в момент окончания: $L \cdot (dist[u] + 1)$
+        \item Ребро доступно $\Leftrightarrow$ $L \cdot (dist[u] + 1) \leq C$
+      \end{itemize}
+
+      \item Финальный алгоритм:
+      \begin{enumerate}
+        \item Запускаем бинарный поиск по $L$ в диапазоне $[0, C_{max}]$
+        \item Для каждого $L$ запускаем BFS от $s$:
+
+        Если ребро $(u, v)$ с ёмкость $C_{u,v}$ удовлетворяет критерию $L \cdot (dist[u] + 1) \leq C_{u,v}$, то добавляем в очередь
+
+        \item Если $t$ достижима, то $L$ подходит.
+        Значит, на следующей итерации бин. поиска берем значение больше, иначе -- меньше.
+      \end{enumerate}
+
+      \item Примерный код:
+
+      \begin{lstlisting}[language=Python]
+from collections import deque
+
+def max_speed(n, edges, s, t, C_max):
+    
+    def can_reach(L):
+        dist = [float('inf')] * n
+        dist[s] = 0
+        queue = deque([s])
+        
+        while queue:
+            vert = queue.popleft()
+
+            for neighbor, C in edges[vert]:
+                new_dist = dist[vert] + 1
+
+                if L * (new_dist) <= C and new_dist < dist[neighbor]:
+                    dist[neighbor] = new_dist
+                    queue.append(neighbor)
+        
+        return dist[t] < float('inf')
+    
+    low, high = 0, C_max
+
+    while low < high:
+        mid = (low + high + 1) // 2
+
+        if can_reach(mid):
+            low = mid
+        else:
+            high = mid - 1
+    
+    return low
+      \end{lstlisting}
+
+      \item Сложность по времени:
+      \begin{itemize}
+        \item Бинарный поиск: $\O(\log C_{max})$ итераций
+        \item Каждый BFS: $\O(|V| + |E|)$
+        \item Итого: $\O((|V| + |E|) \log C_{max})$
+      \end{itemize}
+
+      \item Сложность по памяти: $\O(|V|)$ -- массив расстояний для BFS
+
+    \end{itemize}
 
 \end{enumerate}
