@@ -4,7 +4,7 @@
 \begin{enumerate}
   \item
     Дан взвешенный орграф с положительными весами и вершина $s$.
-    Нужно для каждой вершины $v$ найти число кратчайших путей из $s$ в $v$ по модулю $p$. $\O(E \log V)$.
+    Нужно для каждой вершины $v$ найти число кратчайших путей из $s$ в $v$ по модулю $p$. $\O(|E| \log |V|)$.
 
     Решение:
 
@@ -73,16 +73,108 @@ def dijkstra(graph, start, p):
     \end{itemize}
 
   \item
-    В орграфе есть бесплатные и $K$ типов платных ребер. Передвижение
-    по любому ребру стоит $0$, но, чтобы двигаться по платному ребру
-    типа $x$, необходимо иметь пропуск того же типа. В любой момент
-    времени можно иметь не более одного пропуска, однако в любой
-    вершине есть возможность купить пропуск любого типа за $A$ и
-    продать пропуск любого типа за $B$ ($0 < B < A$, цены одинаковы
-    во всех вершинах). Найдите самый дешевый способ добраться из вершины
-    $s$ до вершины $t$ за $\O(K (V + E))$.
+    В орграфе есть бесплатные и $K$ типов платных ребер. Передвижение по любому ребру стоит $0$, но,
+    чтобы двигаться по платному ребру типа $x$, необходимо иметь пропуск того же типа. 
+    В любой момент времени можно иметь не более одного пропуска, 
+    однако в любой вершине есть возможность купить пропуск любого типа за $A$ и 
+    продать пропуск любого типа за $B$ ($0 < B < A$, цены одинаковы во всех вершинах). 
+    Найдите самый дешевый способ добраться из вершины $s$ до вершины $t$ за $\O(K (|V| + |E|))$.
 
     Решение:
+
+    \begin{itemize}
+      \item Построим граф состояний из $(K + 1)$ копий исходного графа:
+      \begin{itemize}
+
+        \item Копия $0$ (без пропуска) содержит только бесплатные рёбра (вес $0$)
+
+        \item $k$-ая копия ($k = 1, \ldots, K$, с пропуском типа $k$) содержит все вершины исходного графа и рёбра:
+        \begin{itemize}
+          \item все бесплатные рёбра (вес $0$)
+          \item платные рёбра типа $k$ (вес $0$)
+        \end{itemize}
+
+        \item Добавим рёбра между копиями 0 и $k$, где $k = 1, \ldots, K$:
+        \begin{itemize}
+          \item $(v, k) \to (v, 0)$ с весом $0$ -- продажа пропуска
+          \item $(v, 0) \to (v, k)$ с весом $A - B$ -- покупка пропуска
+        \end{itemize}
+      \end{itemize}
+      
+      Смена пропуска $k \to k^*$ идёт через копию $0$: $(v, k) \to (v, 0) \to (v, k^*)$ с суммарным весом $A - B$.
+
+      \item Получается, что веса в графе состояний равны либо $0$, либо $A - B > 0$ $\Rightarrow$ можно использовать \href{https://neerc.ifmo.ru/wiki/index.php?title=%D0%9E%D0%B1%D1%85%D0%BE%D0%B4_%D0%B2_%D1%88%D0%B8%D1%80%D0%B8%D0%BD%D1%83#0-1_BFS}{0-1 BFS}.
+      Этот алгоритм находит кратчайшие пути в графе, у которого вес рёбер равен либо 0, либо 1. 
+      
+      У нас веса равны либо 0, либо $(A-B)$, но это по сути то же самое, ведь мы можем поделить всё на $(A-B)$ и получим нужное представление графа.
+
+      \item Ответом будет минимальная стоимость добраться до любого состояния $(t, k)$ в графе состояний.
+
+      \item Алгоритм:
+
+      \begin{lstlisting}[language=Python]
+from collections import deque
+
+def passes_graph(n, free_edges, paid_edges, K, A, B, s, t):
+    # free_edges[v] = [u, ...]
+    # paid_edges[v] = [(u, pass_type), ...]
+    
+    # 0-1 BFS on layered graph with K+1 layers
+    dist = [[float('inf')] * (K + 1) for _ in range(n)]
+    deq = deque()
+    
+    dist[s][0] = 0
+    deq.append((s, 0))
+    
+    while deq:
+        vert, layer = deq.popleft()
+        curr_dist = dist[vert][layer]
+
+        # Relax free edges (weight 0)
+        for neighbor in free_edges[vert]:
+            if curr_dist < dist[neighbor][layer]:
+                dist[neighbor][layer] = curr_dist
+                deq.appendleft((neighbor, layer))
+        
+        if layer == 0:
+            # Buy pass: (v, 0) -> (v, k) with weight A - B
+            for k in range(1, K + 1):
+                new_dist = curr_dist + A - B
+                if new_dist < dist[vert][k]:
+                    dist[vert][k] = new_dist
+                    deq.append((vert, k))
+        else:
+            # Paid edges inside the same layer (weight 0)
+            for neighbor, edge_type in paid_edges[vert]:
+                if edge_type == layer and curr_dist < dist[neighbor][layer]:
+                    dist[neighbor][layer] = curr_dist
+                    deq.appendleft((neighbor, layer))
+            
+            # Sell pass: (v, k) -> (v, 0) with weight 0
+            if curr_dist < dist[vert][0]:
+                dist[vert][0] = curr_dist
+                deq.appendleft((vert, 0))
+    
+    return min(dist[t])
+      \end{lstlisting}
+
+      \item Сложность по времени:
+      \begin{itemize}
+        \item Число состояний в графе: $(K + 1) \cdot |V| = \O(K \cdot |V|)$
+        \item Число рёбер внутри копий: 
+        $K \cdot |E_{free}| + E_1 + \ldots + E_K \leq K \cdot E_{free} + K \cdot (E_1 + \ldots + E_K) \leq K \cdot (E_{free} + E_1 + \ldots + E_K) = \O(K \cdot |E|)$
+        \item Число рёбер между слоями: $2 \cdot K \cdot |V| = \O(K \cdot |V|)$ (покупка + продажа)
+        \item Итого рёбер: $\O(K \cdot (|V| + |E|))$
+        \item Соответственно, 0-1 BFS отработает за $\O(K \cdot (|V| + |E|))$
+      \end{itemize}
+
+      \item Сложность по памяти: $\O(K \cdot |V|)$ -- массив расстояний для каждого состояния
+      
+      \item Заметим, что в теории может существовать путь, который проходит только через бесплатные рёбра.
+      Тогда можно запустить обычный BFS только на бесплатных рёбрах и получить ответ за $\O(|V| + |E|)$.
+      Это оптимизация частного случая, которая может помочь при больших $K$.
+
+    \end{itemize}
 
   \item
     Дан ориентированный граф с выделенными вершинами $s$ и $t$. Перемещение по любому ребру занимает 1 единицу времени.
