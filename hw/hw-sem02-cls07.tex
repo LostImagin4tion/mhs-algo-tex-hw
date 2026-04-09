@@ -215,4 +215,32 @@
 
     Подсказка: вам может пригодиться \href{https://ru.wikipedia.org/wiki/%D0%9D%D0%B5%D1%80%D0%B0%D0%B2%D0%B5%D0%BD%D1%81%D1%82%D0%B2%D0%BE_%D0%9C%D0%B0%D1%80%D0%BA%D0%BE%D0%B2%D0%B0}{неравенство Маркова}.
 
+    \textbf{Решение:}
+
+    \begin{itemize}
+      \item Обозначим $C$ --- число коллизий (неупорядоченных пар $\{x, x'\} \subseteq X$, $x \neq x'$, таких что $h(x) = h(x')$):
+      $$C = \sum_{\{x, x'\} \subseteq X} \mathbf{1}[h(x) = h(x')]$$
+
+      \item Заметим, что $|h(X)| = |X|$ тогда и только тогда, когда $C = 0$ (нет коллизий).
+
+      \item Оценим матожидание $C$. По линейности матожидания:
+      $$\mathbb{E}[C] = \sum_{\{x, x'\} \subseteq X} \Pr[h(x) = h(x')]$$
+
+      Так как $\mathcal{H}$ универсально, для любых $x \neq x'$:
+      $$\Pr[h(x) = h(x')] \leq \frac{1}{|Y|}$$
+
+      Число неупорядоченных пар: $\binom{|X|}{2} = \dfrac{|X|(|X|-1)}{2}$.
+
+      Поэтому:
+      $$\mathbb{E}[C] \leq \frac{|X|(|X|-1)}{2} \cdot \frac{1}{|Y|} = \frac{|X|(|X|-1)}{2 \cdot c|X|^2} = \frac{|X|-1}{2c|X|} < \frac{1}{2c}$$
+
+      \item Применим неравенство Маркова ($C \geq 0$):
+      $$\Pr[C \geq 1] \leq \frac{\mathbb{E}[C]}{1} < \frac{1}{2c}$$
+
+      \item Следовательно:
+      $$\Pr[|h(X)| = |X|] = \Pr[C = 0] = 1 - \Pr[C \geq 1] \geq 1 - \frac{1}{2c}$$
+
+      ч.т.д.
+    \end{itemize}
+
 \end{enumerate}
