@@ -13,8 +13,60 @@
         Определим $x^{\prime}_s = x_{g^{-s} \mod p}$, $f^{\prime}_r = f_{g^{r} \mod p}$ и $\Delta_{i} = \omega_{p}^{g^i}$.
         Покажите, что: $$f^{\prime}_{r} = x_{0} + \sum_{s = 0}^{p - 2} x^{\prime}_{s} \Delta_{(r - s) \mod (p - 1)}$$
 
+        \textbf{Решение:}
+
+        \begin{itemize}
+          \item По определению:
+          $$f'_r = f_{g^r \mod p} = \sum_{i=0}^{p-1} x_i \cdot \omega_p^{(g^r \mod p) \cdot i}$$
+
+          \item Отделим слагаемое $i = 0$:
+          $$f'_r = x_0 + \sum_{i=1}^{p-1} x_i \cdot \omega_p^{g^r \cdot i \mod p}$$
+
+          \item Так как $g$ --- первообразный корень по модулю $p$, элементы $\{g^0, g^1, \ldots, g^{p-2}\} \mod p$ --- это в точности $\{1, 2, \ldots, p-1\}$. Поэтому каждое $i \in \{1, \ldots, p-1\}$ единственным образом представимо как $i = g^{-s} \mod p$ для некоторого $s \in \{0, 1, \ldots, p-2\}$.
+
+          \item Подставим $i = g^{-s} \mod p$:
+          $$f'_r = x_0 + \sum_{s=0}^{p-2} x_{g^{-s} \mod p} \cdot \omega_p^{g^r \cdot g^{-s} \mod p}$$
+
+          \item Заметим, что $g^r \cdot g^{-s} = g^{r-s}$, и так как порядок $g$ в $(\Z/p\Z)^*$ равен $p - 1$:
+          $$g^{r-s} \mod p = g^{(r - s) \mod (p-1)} \mod p$$
+
+          \item Значит:
+          $$\omega_p^{g^r \cdot g^{-s} \mod p} = \omega_p^{g^{(r-s) \mod (p-1)}} = \Delta_{(r-s) \mod (p-1)}$$
+
+          \item Подставляя $x'_s = x_{g^{-s} \mod p}$:
+          $$f'_r = x_0 + \sum_{s=0}^{p-2} x'_s \cdot \Delta_{(r-s) \mod (p-1)}$$
+
+          ч.т.д.
+        \end{itemize}
+
       \item
         Придумайте, как вычислить $f_k$ за $\O(p \log{p})$ арифметических операций.
+
+        \textbf{Решение:}
+
+        \begin{itemize}
+          \item Из пункта (а) следует, что
+          $$f'_r = x_0 + \sum_{s=0}^{p-2} x'_s \cdot \Delta_{(r-s) \mod (p-1)}$$
+
+          Сумма $\sum_{s=0}^{p-2} x'_s \cdot \Delta_{(r-s) \mod (p-1)}$ --- это циклическая свёртка двух последовательностей длины $p - 1$: $(x'_0, x'_1, \ldots, x'_{p-2})$ и $(\Delta_0, \Delta_1, \ldots, \Delta_{p-2})$.
+
+          \item Циклическая свёртка длины $N = p - 1$ вычисляется за $\O(N \log N)$:
+          \begin{enumerate}
+            \item Дополнить обе последовательности нулями до длины $M \geq 2N - 1$, где $M$ --- степень двойки.
+            \item Вычислить DFT обеих последовательностей размера $M$.
+            \item Поэлементно перемножить результаты.
+            \item Вычислить обратное DFT.
+            \item Сложить элементы с индексами, совпадающими по модулю $N$ (свернуть обратно до длины $N$).
+          \end{enumerate}
+
+          \item После получения свёртки прибавляем $x_0$ к каждому $f'_r$ за $\O(p)$.
+
+          \item Получили все $f'_r = f_{g^r \mod p}$ для $r = 0, \ldots, p-2$, то есть все $f_k$ для $k \in \{1, \ldots, p-1\}$.
+
+          \item Значение $f_0 = \sum_{i=0}^{p-1} x_i$ вычисляем отдельно за $\O(p)$.
+
+          \item Итого: $\O(p \log p)$ арифметических операций.
+        \end{itemize}
     \end{enumerate}
 
   \item
